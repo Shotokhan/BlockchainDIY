@@ -7,7 +7,28 @@
    to be mined? If this is the case, Block class needs a new constructor and its methods need to be updated,
    as the addBlock method of the Chain class. ] DONE: the client sends a Block
 
-3) Smart contracts: immutable and distributed
+[ 3) Smart contracts: immutable and distributed ] It can be done locally in this way:
+	- SmartContract class inherits from Wallet and contains cost of a service, owner, TX count,
+	  the hash of the contract, a static sequence number to ensure hashes are all different and
+	  a reference to an object of type Object; to use the object, there are 3 methods:
+	  getObjectMethods(), getObjectStatus() and invokeMethod(name, args[]); so the Java Reflection API
+	  will be used.
+	- ContractBlock inherits from Block and contains the smart contract id, the public key of the requestor
+	  of a service, the type of service (ENUM: create, read_methods, read_status, call_method, delete), and
+	  the arguments of the service; based on the cost associated to the services of the smart contracts, it may
+	  be necessary to add transactions to the block. The methods are 1:1 with the enum types, with the appropriate
+	  arguments, and there is a setRequestor method. So, every service call is chained (because it needs computing
+	  power, so if one has to call a contract multiple times he or she should do so reading methods and storing
+	  them, to not make useless calls).
+	- The Chain keeps track of created and still not deleted smart contracts in a hashmap.
+	The problem with this approach is that other peers do not have the Class type of the object referenced by
+	a newly created smart contract in their classpath, so they can't execute it; a solution would be to send
+	informations with the createContract method of ContractBlock in such a way to let other peers add the
+	class to the classpath, but another problem raises: as the number of smart contracts grows, the size of
+	the application grows. Ethereum did a VM capable of executing a bytecode sent by who wants to create a new
+	smart contract: so, there is an ABI. This is the working solution; I'll not implement it on my own: my design
+	was close to it, but a lightweight embedded VM is better than a JVM if the purpose is only to execute few
+	lines of assembly code.
    
 [ 4) Add transaction fees in the processTransaction method, with output sent to the miner. ] DONE
 
