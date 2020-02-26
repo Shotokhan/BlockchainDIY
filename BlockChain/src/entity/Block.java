@@ -13,10 +13,6 @@ import util.TransactionException;
 
 public class Block {
 
-	public Block() {
-		super();
-	}
-
 	private String hash;
 	private String previousHash;
 	private String merkleRoot;
@@ -25,13 +21,17 @@ public class Block {
 	
 	private ArrayList<Transaction> transactions = new ArrayList<Transaction>();
 	
-	public Block(String previousHash) {
-		this.previousHash = previousHash;
+	public Block() {
 		this.timeStamp = new Timestamp(java.lang.System.currentTimeMillis());
 		this.nonce = 0;
 	}
 
-	public void mineBlock(int difficulty) {
+	public void mineBlock(int difficulty, PublicKey miner) throws TransactionException {
+		if(this.previousHash != "0") {
+			for(Transaction transaction : transactions) {
+				transaction.processTransaction(miner);
+			}
+		}
 		this.merkleRoot = StringUtil.getMerkleRoot(transactions);
 		this.applySha256();
 		while(this.checkProofOfWork(difficulty) == false) {
@@ -75,13 +75,7 @@ public class Block {
 		if(transaction == null) {
 			throw new TransactionException("Null transaction");
 		}
-		// check first block
-		if(this.previousHash == "0") {
-			transactions.add(transaction);
-		} else {
-			transaction.processTransaction();
-			transactions.add(transaction);
-		}
+		transactions.add(transaction);
 	}
 	
 	public String getHash() {
@@ -117,5 +111,9 @@ public class Block {
 
 	public ArrayList<Transaction> getTransactions() {
 		return transactions;
+	}
+
+	public void setPreviousHash(String previousHash) {
+		this.previousHash = previousHash;
 	}
 }

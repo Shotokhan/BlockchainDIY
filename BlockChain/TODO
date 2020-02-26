@@ -1,15 +1,15 @@
 1) Allow a single wallet send funds more times (if it has more than one unspent output) in a single block,
    without errors.
 
-2) Should the addBlock method of the Chain class (which simulates a broadcasting of the request) take as
+[ 2) Should the addBlock method of the Chain class (which simulates a broadcasting of the request) take as
    input a list of transactions and delegate the task of creating a block to the handler of the request, as
    it already does, or should it take as input a block whose transactions need to be processed and who needs
    to be mined? If this is the case, Block class needs a new constructor and its methods need to be updated,
-   as the addBlock method of the Chain class.
+   as the addBlock method of the Chain class. ] DONE: the client sends a Block
 
 3) Smart contracts: immutable and distributed
    
-4) Add transaction fees in the processTransaction method, with output sent to the miner.
+[ 4) Add transaction fees in the processTransaction method, with output sent to the miner. ] DONE
 
 5) Implement a basic form of P2P networking (you will need to implement deserialization to reach this).
 

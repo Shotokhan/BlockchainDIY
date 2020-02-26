@@ -23,6 +23,8 @@ public class Transaction {
 	
 	private PublicKey receiver;
 	
+	private PublicKey miner;
+	
 	private float value;
 	
 	private byte[] signature;
@@ -42,7 +44,7 @@ public class Transaction {
 		this.inputs = inputs;
 	}
 
-	public void genesisTransaction() throws TransactionException {
+	public void genesisTransaction(PublicKey miner) throws TransactionException {
 		if(blockchain.getBlockChain().size() > 0) {
 			throw new TransactionException("Genesis transaction can be done only one time");
 		}
@@ -52,16 +54,22 @@ public class Transaction {
 		ArrayList<TransactionOutput> outputs = new ArrayList<TransactionOutput>();
 		Wallet coinbase = new Wallet();
 		this.sender = coinbase.getPublicKey();
+		float reward = 1; // hard-coded
+		this.miner = miner;
 		this.transactionID = this.calculateHash();
 		outputs.add(new TransactionOutput(receiver, value, transactionID));
+		outputs.add(new TransactionOutput(miner, reward, transactionID));
 		this.outputs = outputs;
 		inputs.add(new TransactionInput(outputs.get(0).getId()));
 		inputs.get(0).setUTXO(outputs.get(0));
+		inputs.add(new TransactionInput(outputs.get(1).getId()));
+		inputs.get(1).setUTXO(outputs.get(1));
 		this.generateSignature(coinbase.getPrivateKey());
 		this.blockchain.getUTXOs().put(outputs.get(0).getId(), outputs.get(0));
+		this.blockchain.getUTXOs().put(outputs.get(1).getId(), outputs.get(1));
 	}
 	
-	public void processTransaction() throws TransactionException {
+	public void processTransaction(PublicKey miner) throws TransactionException {
 		if(this.verifySignature() == false) {
 			throw new TransactionException("Signature not valid");
 		}
@@ -76,9 +84,13 @@ public class Transaction {
 		if(this.value < Chain.minimumTransaction) {
 			throw new TransactionException("Transaction amount is below minimum threshold");
 		}
+		float transactionFee = this.value * Chain.transactionFee; 
 		float leftAmount = total - this.value;
+		float adjustedValue = this.value - transactionFee;
+		this.miner = miner;
 		this.transactionID = this.calculateHash();
-		this.outputs.add(new TransactionOutput(this.receiver, this.value, this.transactionID));
+		this.outputs.add(new TransactionOutput(this.receiver, adjustedValue, this.transactionID));
+		this.outputs.add(new TransactionOutput(this.miner, transactionFee, this.transactionID));
 		if(leftAmount > 0) {
 			this.outputs.add(new TransactionOutput(this.sender, leftAmount, this.transactionID));
 		}
@@ -137,6 +149,7 @@ public class Transaction {
 		StringBuffer br = new StringBuffer();
 		br.append(sender.toString());
 		br.append(receiver.toString());
+		br.append(miner.toString());
 		br.append(Float.toString(value));
 		return StringUtil.sha256(br.toString());
 	}
@@ -190,6 +203,10 @@ public class Transaction {
 		Gson gson = gsonBuilder.create();
 		String json = gson.toJson(this);
 		return json;
+	}
+
+	public PublicKey getMiner() {
+		return miner;
 	}
 	
 

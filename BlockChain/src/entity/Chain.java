@@ -17,39 +17,38 @@ public class Chain {
 	
 	public static int difficulty = 4;
 	public static float minimumTransaction = (float) 0.01;
+	public static float transactionFee = (float) 0.01; // this is a percentage value
 	
 	public Chain() {
 		blockChain = new ArrayList<Block>();
 	}
 	
-	public void addBlock(ArrayList<Transaction> transactions) throws TransactionException {
+	public void addBlock(Block newBlock, PublicKey miner) throws TransactionException {
 		if(blockChain.size() == 0) {
-			Block newBlock = new Block("0");
-			Transaction transaction = transactions.get(0);
+			newBlock.setPreviousHash("0");
+			Transaction transaction = newBlock.getTransactions().get(0);
 			transaction.setBlockchain(this);
+			while(newBlock.getTransactions().size() > 1) {
+				newBlock.getTransactions().remove(1);
+			}
 			try {
-				transaction.genesisTransaction();
-				newBlock.addTransaction(transaction);
+				transaction.genesisTransaction(miner);
 			} catch (TransactionException e) {
 				// unreachable
 				e.printStackTrace();
 			}
-			newBlock.mineBlock(difficulty);
+			newBlock.mineBlock(difficulty, miner);
 			blockChain.add(newBlock);
 		} else {
 			Block lastBlock = blockChain.get(blockChain.size() - 1);
-			Block newBlock = new Block(lastBlock.getHash());
+			newBlock.setPreviousHash(lastBlock.getHash());
 			HashMap<String, TransactionOutput> shadowUTXOs = new HashMap<String, TransactionOutput>(UTXOs);
-			for(Transaction transaction : transactions) {
-				transaction.setBlockchain(this);
-				try {
-					newBlock.addTransaction(transaction);
-				} catch (TransactionException e) {
-					this.UTXOs = shadowUTXOs;
-					throw new TransactionException("Transactions not chained: " + e.getMessage());
-				}
+			try {
+				newBlock.mineBlock(difficulty, miner);
+			} catch (TransactionException e) {
+				this.UTXOs = shadowUTXOs;
+				throw new TransactionException("Transactions not chained: " + e.getMessage());
 			}
-			newBlock.mineBlock(difficulty);
 			blockChain.add(newBlock);
 		}
 	}
@@ -90,8 +89,11 @@ public class Chain {
 				if(!transaction.getOutputs().get(0).getReceiver().equals(transaction.getReceiver())) {
 					return false;
 				}
-				if(transaction.getOutputs().size() > 1) {
-					if(!transaction.getOutputs().get(1).getReceiver().equals(transaction.getSender())) {
+				if(!transaction.getOutputs().get(1).getReceiver().equals(transaction.getMiner())) {
+					return false;
+				}
+				if(transaction.getOutputs().size() > 2) {
+					if(!transaction.getOutputs().get(2).getReceiver().equals(transaction.getSender())) {
 						return false;
 					}	
 				}

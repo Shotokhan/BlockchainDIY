@@ -65,6 +65,7 @@ public class Wallet {
 	}
 	
 	public Transaction sendFunds(PublicKey receiver, float value) throws TransactionException {
+		value = value / (1 - Chain.transactionFee);
 		if(this.updateBalance() < value) {
 			throw new TransactionException("Not enough funds available");
 		}

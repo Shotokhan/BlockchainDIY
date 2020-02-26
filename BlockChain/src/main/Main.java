@@ -1,8 +1,8 @@
 package main;
 
 import java.security.Security;
-import java.util.ArrayList;
 
+import entity.Block;
 import entity.Chain;
 import entity.Transaction;
 import entity.Wallet;
@@ -18,25 +18,35 @@ public class Main {
 		Wallet walletB = new Wallet();
 		Wallet walletC = new Wallet();
 		Wallet walletD = new Wallet();
+		Wallet miner = new Wallet();
 		walletA.setBlockchain(blockchain);
 		walletB.setBlockchain(blockchain);
 		walletC.setBlockchain(blockchain);
 		walletD.setBlockchain(blockchain);
+		miner.setBlockchain(blockchain);
 		
 		// genesis transaction
+		// client
 		Transaction genesis = new Transaction(null, walletA.getPublicKey(), 0, null);
-		genesis.setBlockchain(blockchain);
-		ArrayList<Transaction> transactions = new ArrayList<Transaction>();
-		transactions.add(genesis);
+		Block newBlock = new Block();
 		try {
-			blockchain.addBlock(transactions);
+			newBlock.addTransaction(genesis);
+		} catch (TransactionException e2) {
+			// to user interface
+			e2.printStackTrace();
+			return;
+		}
+		// broadcast()
+		// server (other peers)
+		try {
+			blockchain.addBlock(newBlock, miner.getPublicKey());
 		} catch (TransactionException e1) {
 			e1.printStackTrace();
 			return;
 		}
-		transactions.remove(0);
 		
 		// simple transaction
+		// client
 		Transaction transaction;
 		try {
 			transaction = walletA.sendFunds(walletB.getPublicKey(), 20);
@@ -44,49 +54,82 @@ public class Main {
 			e.printStackTrace();
 			return;
 		}
-		transactions.add(transaction);
+		newBlock = new Block();
 		try {
-			blockchain.addBlock(transactions);
+			newBlock.addTransaction(transaction);
+		} catch (TransactionException e2) {
+			// to user interface
+			e2.printStackTrace();
+			return;
+		}
+		// broadcast()
+		// server (other peers)
+		try {
+			blockchain.addBlock(newBlock, miner.getPublicKey());
 		} catch (TransactionException e1) {
 			e1.printStackTrace();
 			return;
 		}
-		transactions.remove(0);
 		
 		// simple transaction
+		// client
 		try {
 			transaction = walletB.sendFunds(walletA.getPublicKey(), 2);
 		} catch (TransactionException e) {
 			e.printStackTrace();
 			return;
 		}
-		transactions.add(transaction);
+		newBlock = new Block();
 		try {
-			blockchain.addBlock(transactions);
+			newBlock.addTransaction(transaction);
+		} catch (TransactionException e2) {
+			// to user interface
+			e2.printStackTrace();
+			return;
+		}
+		// broadcast()
+		// server (other peers)
+		try {
+			blockchain.addBlock(newBlock, miner.getPublicKey());
 		} catch (TransactionException e1) {
 			e1.printStackTrace();
 			return;
 		}
-		transactions.remove(0);
 		
 		// multiple transactions in a single block
 		// TODO: how could a single wallet send funds more times in a single block?
+		// client
+		newBlock = new Block();
 		try {
 			transaction = walletB.sendFunds(walletC.getPublicKey(), 10);
 		} catch (TransactionException e) {
 			e.printStackTrace();
 			return;
 		}
-		transactions.add(transaction);
+		try {
+			newBlock.addTransaction(transaction);
+		} catch (TransactionException e1) {
+			// to user interface
+			e1.printStackTrace();
+			return;
+		}
 		try {
 			transaction = walletA.sendFunds(walletD.getPublicKey(), 5);
 		} catch (TransactionException e) {
 			e.printStackTrace();
 			return;
 		}
-		transactions.add(transaction);
 		try {
-			blockchain.addBlock(transactions);
+			newBlock.addTransaction(transaction);
+		} catch (TransactionException e1) {
+			// to user interface
+			e1.printStackTrace();
+			return;
+		}
+		// broadcast()
+		// server (other peers)
+		try {
+			blockchain.addBlock(newBlock, miner.getPublicKey());
 		} catch (TransactionException e) {
 			e.printStackTrace();
 			return;
@@ -97,6 +140,7 @@ public class Main {
 		System.out.println("\nB's wallet : \n" + walletB.toString());
 		System.out.println("\nC's wallet : \n" + walletC.toString());
 		System.out.println("\nD's wallet : \n" + walletD.toString());
+		System.out.println("\nMiner's wallet : \n" + miner.toString());
 		System.out.println("\nBlock chain is valid: " + blockchain.isChainValid());
 	}
 
