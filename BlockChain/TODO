@@ -28,7 +28,7 @@
 	the application grows. Ethereum did a VM capable of executing a bytecode sent by who wants to create a new
 	smart contract: so, there is an ABI. This is the working solution; I'll not implement it on my own: my design
 	was close to it, but a lightweight embedded VM is better than a JVM if the purpose is only to execute few
-	lines of assembly code.
+	lines of assembly code. Tron VM could be a solution: https://github.com/tronprotocol
    
 [ 4) Add transaction fees in the processTransaction method, with output sent to the miner. ] DONE
 
