@@ -1,6 +1,8 @@
 package main;
 
+import java.security.PublicKey;
 import java.security.Security;
+import java.util.ArrayList;
 
 import entity.Block;
 import entity.Chain;
@@ -97,7 +99,6 @@ public class Main {
 		}
 		
 		// multiple transactions in a single block
-		// TODO: how could a single wallet send funds more times in a single block?
 		// client
 		newBlock = new Block();
 		try {
@@ -124,6 +125,40 @@ public class Main {
 		} catch (TransactionException e1) {
 			// to user interface
 			e1.printStackTrace();
+			return;
+		}
+		// broadcast()
+		// server (other peers)
+		try {
+			blockchain.addBlock(newBlock, miner.getPublicKey());
+		} catch (TransactionException e) {
+			e.printStackTrace();
+			return;
+		}
+		
+		// one wallet sending multiple transactions in the same block
+		// client
+		newBlock = new Block();
+		ArrayList<Transaction> transactions;
+		ArrayList<PublicKey> receivers = new ArrayList<PublicKey>();
+		ArrayList<Float> values = new ArrayList<Float>();
+		receivers.add(walletC.getPublicKey());
+		values.add(Float.valueOf(1));
+		receivers.add(walletD.getPublicKey());
+		values.add(Float.valueOf(20));
+		try {
+			transactions = walletA.sendFunds(receivers, values);
+		} catch (TransactionException e) {
+			e.printStackTrace();
+			return;
+		}
+		try {
+			for(Transaction tx : transactions) {
+				newBlock.addTransaction(tx);
+			}
+		} catch (TransactionException e) {
+			// to user interface
+			e.printStackTrace();
 			return;
 		}
 		// broadcast()

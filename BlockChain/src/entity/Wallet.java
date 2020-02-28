@@ -5,6 +5,9 @@ import java.security.spec.ECGenParameterSpec;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -62,6 +65,54 @@ public class Wallet {
 				UTXOs.put(entry.getKey(), entry.getValue());
 			}
 		}
+	}
+	
+	public ArrayList<Transaction> sendFunds(ArrayList<PublicKey> receivers, ArrayList<Float> values) throws TransactionException {
+		float totalValue = 0;
+		for(Float value : values) {
+			value = Float.valueOf(value.floatValue() / (1 - Chain.transactionFee));
+			totalValue += value.floatValue();
+		}
+		if(this.updateBalance() < totalValue) {
+			throw new TransactionException("Not enough funds available");
+		}
+		// "best fit" approach for inputs, O(r*log2(n)*n) where r is the number of receivers and n the number of UTXOs
+		SortedSet<TransactionOutput> orderedUTXOs = new TreeSet<>();
+		orderedUTXOs.addAll(UTXOs.values());
+		ArrayList<Transaction> transactions = new ArrayList<Transaction>();
+		for(int i=0; i < receivers.size(); i++) {
+			ArrayList<TransactionInput> inputs = new ArrayList<TransactionInput>();
+			float value = 0;
+			while (value <= values.get(i).floatValue()) {
+				SortedSet<TransactionOutput> candidates = orderedUTXOs.tailSet(new TransactionOutput(null, values.get(i).floatValue() - value, ""));
+				if (candidates.size() == 0) {
+					TransactionOutput output = null;
+					try {
+						output = orderedUTXOs.last();
+					} catch (NoSuchElementException e) {
+						throw new TransactionException("Mapping of UTXOs to multiple transactions did not succeed");
+					}
+					value += output.getValue();
+					inputs.add(new TransactionInput(output.getId()));
+					orderedUTXOs.remove(output);
+				} else {
+					TransactionOutput output = candidates.first();
+					value += output.getValue();
+					inputs.add(new TransactionInput(output.getId()));
+					orderedUTXOs.remove(output);
+				}
+			}
+			Transaction transaction = new Transaction(this.publicKey, receivers.get(i), values.get(i).floatValue(), inputs);
+			transaction.setBlockchain(this.blockchain);
+			transaction.generateSignature(this.privateKey);
+			transactions.add(transaction);
+		}
+		for(Transaction transaction : transactions) {
+			for(TransactionInput input : transaction.getInputs()) {
+				this.UTXOs.remove(input.getTransactionOutputID());
+			}
+		}
+		return transactions;
 	}
 	
 	public Transaction sendFunds(PublicKey receiver, float value) throws TransactionException {

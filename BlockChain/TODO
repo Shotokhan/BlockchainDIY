@@ -1,5 +1,5 @@
-1) Allow a single wallet send funds more times (if it has more than one unspent output) in a single block,
-   without errors.
+[ 1) Allow a single wallet send funds more times (if it has more than one unspent output) in a single block,
+   without errors. ] DONE with a "best fit" approach
 
 [ 2) Should the addBlock method of the Chain class (which simulates a broadcasting of the request) take as
    input a list of transactions and delegate the task of creating a block to the handler of the request, as

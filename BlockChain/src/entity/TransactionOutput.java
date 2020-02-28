@@ -8,7 +8,7 @@ import com.google.gson.GsonBuilder;
 import util.KeySerializer;
 import util.StringUtil;
 
-public class TransactionOutput {
+public class TransactionOutput implements Comparable<TransactionOutput> {
 
 	public TransactionOutput() {
 		super();
@@ -75,6 +75,15 @@ public class TransactionOutput {
 		Gson gson = gsonBuilder.create();
 		String json = gson.toJson(this);
 		return json;
+	}
+
+	@Override
+	public int compareTo(TransactionOutput other) {
+		if (this == other)
+			return 0;
+		if (other == null)
+			throw new RuntimeException("Compare with null object");
+		return (int) (this.value - other.getValue());
 	}
 	
 }
