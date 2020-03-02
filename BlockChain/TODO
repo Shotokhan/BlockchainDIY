@@ -46,3 +46,5 @@
 8) How to dynamically handle changes of difficulty and of transaction fees (and of some other parameters like these)?
    How to reach consensus about these changes? In general, how to update the distributed software, with something
    like an 'election' of a new accepted software?
+   
+9) GUI with NetBeans
